@@ -341,6 +341,16 @@ footer b{color:var(--ink)}
 /* no house dots anywhere; fluorescent orange on the "!" of the general notice */
 .dot{display:none!important}
 .disclaimer .ico{background:#ff6a00;color:#0b1ea8;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 0 12px 2px rgba(255,106,0,.55)}
+/* CASTING DANCERS toggle, separated from the production houses */
+[hidden]{display:none!important}
+.tabs{grid-template-columns:repeat(5,minmax(0,1fr)) 14px minmax(0,1.35fr)}
+.tab-sep{position:relative;width:14px}
+.tab-sep::before{content:"";position:absolute;left:50%;top:6px;bottom:6px;width:2px;margin-left:-1px;background:#8f98c9;border-radius:2px}
+.tabs button[data-h="cd"]{letter-spacing:.05em;font-size:15px}
+.tabs button[data-h="cd"][aria-pressed="false"]{color:var(--blue)}
+@media (max-width:1200px){.tabs button{padding:13px 8px;font-size:15px}.tabs button[data-h="cd"]{font-size:14px}}
+@media (max-width:900px){.tabs{grid-template-columns:none}.tabs button[data-h="cd"]{font-size:14px}}
+@media (min-width:901px) and (max-width:1100px){.tabs button{font-size:13.5px;padding:12px 4px;gap:5px}.tabs button[data-h="cd"]{font-size:12.5px;letter-spacing:.03em}.tabs .n{padding:2px 6px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -380,6 +390,8 @@ footer b{color:var(--ink)}
       <button type="button" data-h="ml" aria-pressed="false"><span class="dot ml"></span>Moonlighting<span class="n">22</span></button>
       <button type="button" data-h="eg" aria-pressed="false"><span class="dot eg"></span>Egg Films<span class="n">18</span></button>
       <button type="button" data-h="pf" aria-pressed="false"><span class="dot pf"></span>Patriot Films<span class="n">12</span></button>
+      <span class="tab-sep" aria-hidden="true"></span>
+      <button type="button" data-h="cd" aria-pressed="false"><span class="en">CASTING DANCERS</span><span class="ko">캐스팅 댄서</span></button>
     </div>
     <div class="cats" id="catnav"></div>
   </div>
@@ -561,7 +573,7 @@ function castTile(c, idx){
 
 const profLine = p => `${U().yrs(p.age)}${p.height ? ' · ' + p.height + ' cm' : ''}`;
 function moonBlock(){
-  if (!(filter === 'all' || filter === 'ml')) return '';
+  if (!(filter === 'all' || filter === 'cd' || filter === 'ml')) return '';
   const M = D.moon, plat = {ig:'Instagram', web:U().web};
   const yts = M.refs.filter(r => r.k === 'yt').map(r => `<div class="ytcard"><div class="vwrap"><iframe src="https://www.youtube-nocookie.com/embed/${r.id}?rel=0" title="${esc(r.t)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><div class="ytcap"><b>${esc(r.t)}</b> <em>(${esc(r.ch)})</em><a href="${r.u}" target="_blank" rel="noopener">${U().openYT} ↗</a></div></div>`).join('');
   const rest = M.refs.filter(r => r.k !== 'yt');
@@ -589,14 +601,16 @@ function openDancers(){
 }
 const PAT_URL = 'https://view.youmeandco.com/opencomm.asp?type=presentation_share2&id=337011&id2=10949&linkguid=%7B0F7B35CE-2581-418A-BFEC-5883A3724A3B%7D&commid=&guid=';
 function patriotBlock(){
-  if (!(filter === 'all' || filter === 'pf')) return '';
+  if (!(filter === 'all' || filter === 'cd' || filter === 'pf')) return '';
   return `<div class="mcard" id="pfdance"><div class="who"><span class="dot pf"></span>Patriot Films</div><h4>${U().patTitle}</h4><p class="mintro">${U().patIntro}</p><div class="vtext"><a class="vbtn" href="${esc(PAT_URL)}" target="_blank" rel="noopener">${U().patBtn} ↗</a></div></div>`;
 }
 function render(){
   const nav = [], secs = [];
   const all = D.locs.map((l,i)=>[l,i]);
   const catName = k => { const c = D.cats.find(c => c[0] === k); return lang === 'ko' ? c[2] : c[1]; };
-  if (filter === 'all'){
+  if (filter === 'cd'){
+    // casting dancers view: no location sections
+  } else if (filter === 'all'){
     // one section per production house, with all of its proposals
     ['mf','ml','eg','pf'].forEach(h => {
       const items = all.filter(([l]) => l.house === h);
@@ -632,13 +646,16 @@ function render(){
   document.getElementById('pfcasting').hidden = filter !== 'pf';
   document.getElementById('pfsets').hidden = filter !== 'pf';
   const cn = document.getElementById('catnav');
-  cn.hidden = filter === 'all';
-  cn.innerHTML = filter === 'all' ? '' : nav.join('');
+  const noNav = filter === 'all' || filter === 'cd';
+  cn.hidden = noNav;
+  cn.innerHTML = noNav ? '' : nav.join('');
+  document.querySelector('.houses').hidden = filter === 'cd';
+  document.getElementById('weather').hidden = filter === 'cd';
   document.getElementById('sections').innerHTML = secs.join('');
   document.getElementById('castgrid').innerHTML = D.cast.map((c, i) => c.deck ? '' : castTile(c, i)).join('');
-  document.getElementById('mfdance').hidden = !(filter === 'all' || filter === 'mf');
+  document.getElementById('mfdance').hidden = !(filter === 'all' || filter === 'cd' || filter === 'mf');
 
-  const dl = D.dancers.map((d, i) => [d, i]).filter(([d]) => filter === 'all' || d.house === filter);
+  const dl = D.dancers.map((d, i) => [d, i]).filter(([d]) => filter === 'all' || filter === 'cd' || d.house === filter);
   const got = dl.filter(([d]) => !d.pending), wait = dl.filter(([d]) => d.pending);
   document.getElementById('dancergrid').innerHTML =
     got.map(([d, i]) => `<div class="dcard">
